@@ -1,0 +1,814 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>XOLƎRIƆ · | Smart TV</title>
+    <meta name="theme-color" content="#050510">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+        }
+
+        :root {
+            --bg: #050510; /* Deep Dark Background */
+            --surface: #101018; /* Card Surface */
+            --surface-light: #181825; /* Lighter Surface */
+            --border: rgba(251, 191, 36, 0.15); /* Gold Border */
+            --accent: #fbbf24; /* Primary Gold Accent */
+            --accent-glow: #d97706; /* Glow Gold Accent */
+            --text: #ffffff; /* White Text */
+            --text-dim: #cbd5e1; /* Dim Text */
+            --gold: #fbbf24; /* Gold Star */
+            --success: #10b981; /* Success Green */
+            --danger: #ef4444; /* Danger Red */
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: system-ui, -apple-system, 'Segoe UI', 'Roboto', sans-serif;
+            height: 100dvh;
+            width: 100dvw;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            position: fixed;
+        }
+
+        /* Focus ring for remote control */
+        :focus-visible {
+            outline: 4px solid var(--accent);
+            outline-offset: 4px;
+            background-color: rgba(251, 191, 36, 0.1);
+            transition: outline 0.05s;
+        }
+
+        button, .word-tile, .step-tab, .letter-tab, .ctrl-btn, .nav-btn, .speed-option {
+            cursor: pointer;
+            transition: transform 0.05s, background 0.1s;
+        }
+        button:active, .word-tile:active {
+            transform: scale(0.97);
+        }
+
+        /* Header */
+        .tv-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.5rem 2.5rem;
+            background: rgba(5, 5, 16, 0.9);
+            backdrop-filter: blur(16px);
+            border-bottom: 1px solid var(--border);
+            flex-wrap: wrap;
+            gap: 1rem;
+            flex-shrink: 0;
+        }
+        .logo {
+            font-size: clamp(1.4rem, 6vw, 2.2rem);
+            font-weight: 800;
+            background: linear-gradient(135deg, #fff, var(--accent), var(--accent-glow));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            letter-spacing: -1px;
+        }
+        .header-buttons {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+        .mode-btn, .fullscreen-btn, .fav-btn, .sound-btn {
+            background: var(--surface-light);
+            border: 1px solid var(--border);
+            border-radius: 60px;
+            padding: 0.6rem 1.4rem;
+            font-weight: 600;
+            font-size: clamp(0.8rem, 2.8vw, 1rem);
+            backdrop-filter: blur(4px);
+            white-space: nowrap;
+        }
+        .mode-btn.active {
+            background: var(--accent);
+            color: var(--bg);
+            box-shadow: 0 0 16px rgba(251, 191, 36, 0.3);
+        }
+        .word-of-day {
+            background: rgba(251, 191, 36, 0.1);
+            padding: 0.6rem 1.4rem;
+            border-radius: 40px;
+            font-size: clamp(0.75rem, 2.2vw, 0.9rem);
+            border-left: 3px solid var(--accent);
+            white-space: nowrap;
+        }
+
+        /* Main content area */
+        .main-content {
+            flex: 1;
+            overflow: hidden;
+            position: relative;
+        }
+        .screen {
+            height: 100%;
+            width: 100%;
+            overflow-y: auto;
+            padding: 2rem 2.5rem;
+            scrollbar-width: thin;
+        }
+        .screen::-webkit-scrollbar {
+            width: 10px;
+        }
+        .screen::-webkit-scrollbar-track {
+            background: var(--surface);
+            border-radius: 10px;
+        }
+        .screen::-webkit-scrollbar-thumb {
+            background: var(--accent);
+            border-radius: 10px;
+        }
+        .hidden {
+            display: none !important;
+        }
+
+        /* Tabs (Silliq kartalar) */
+        .tabs-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-bottom: 2.5rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid var(--border);
+        }
+        .step-tab, .letter-tab {
+            background: var(--surface-light);
+            border: 1px solid var(--border);
+            border-radius: 1.2rem;
+            padding: 0.8rem 1.8rem;
+            font-weight: 600;
+            font-size: clamp(0.8rem, 2.8vw, 1rem);
+            color: var(--text-dim);
+        }
+        .step-tab.active, .letter-tab.active {
+            background: var(--accent);
+            color: var(--bg);
+            border-color: var(--accent);
+        }
+
+        /* Words grid (Premium kartalar) */
+        .words-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(min(220px, 35vw), 1fr));
+            gap: 1.5rem;
+        }
+        .word-tile {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 1.5rem;
+            padding: 1rem 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: clamp(0.9rem, 3vw, 1.2rem);
+            font-weight: 600;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .word-text {
+            flex: 1;
+            word-break: break-word;
+        }
+        .star-btn {
+            background: none;
+            border: none;
+            font-size: 1.8rem;
+            color: var(--accent);
+            cursor: pointer;
+            width: 2.5rem;
+            height: 2.5rem;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 2.5rem;
+        }
+        .star-btn.inactive {
+            color: var(--text-dim);
+            opacity: 0.5;
+        }
+
+        /* Auto mode (Katta premium karta) */
+        .auto-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 70vh;
+            text-align: center;
+        }
+        .word-card {
+            background: var(--surface);
+            border: 2px solid var(--accent);
+            border-radius: 2.5rem;
+            padding: 3.5rem 4rem;
+            max-width: 85vw;
+            box-shadow: 0 0 50px rgba(251, 191, 36, 0.2);
+            backdrop-filter: blur(16px);
+        }
+        .big-word {
+            font-size: clamp(2.5rem, 12vw, 5rem);
+            font-weight: 900;
+            word-break: break-word;
+            color: var(--text);
+            text-shadow: 0 0 16px rgba(251, 191, 36, 0.3);
+        }
+        .word-meta {
+            font-size: clamp(0.9rem, 3.5vw, 1.3rem);
+            color: var(--accent);
+            margin-top: 1.5rem;
+            font-weight: 500;
+        }
+        .auto-controls {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 1.5rem;
+            margin: 3rem 0 2rem;
+        }
+        .ctrl-btn {
+            background: var(--surface-light);
+            border: 1px solid var(--border);
+            border-radius: 60px;
+            padding: 0.8rem 2rem;
+            font-size: clamp(0.85rem, 2.8vw, 1.1rem);
+            font-weight: 600;
+            color: var(--text);
+        }
+        .speed-selector {
+            display: flex;
+            gap: 1rem;
+            background: rgba(16, 16, 24, 0.7);
+            padding: 0.6rem 1.2rem;
+            border-radius: 60px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .speed-option {
+            background: var(--surface-light);
+            border: 1px solid var(--border);
+            border-radius: 40px;
+            padding: 0.5rem 1.2rem;
+            font-size: clamp(0.75rem, 2.2vw, 1rem);
+            color: var(--text-dim);
+        }
+        .speed-option.active {
+            background: var(--accent);
+            color: var(--bg);
+            border-color: var(--accent);
+        }
+        .progress-text {
+            margin-top: 1rem;
+            font-size: clamp(0.85rem, 2.8vw, 1.1rem);
+            color: var(--accent);
+            font-weight: 600;
+        }
+
+        /* Status bar */
+        .status-bar {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.8rem 2.5rem;
+            background: rgba(5, 5, 16, 0.85);
+            border-top: 1px solid var(--border);
+            font-size: clamp(0.7rem, 2.2vw, 0.9rem);
+            backdrop-filter: blur(12px);
+            flex-shrink: 0;
+            gap: 1rem;
+            flex-wrap: wrap;
+            color: var(--text-dim);
+        }
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .status-icon {
+            color: var(--accent);
+        }
+
+        @media (max-width: 640px) {
+            .tv-header {
+                flex-direction: column;
+                align-items: stretch;
+                text-align: center;
+                padding: 1rem;
+            }
+            .word-of-day {
+                white-space: normal;
+            }
+            .header-buttons {
+                justify-content: center;
+            }
+            .words-grid {
+                grid-template-columns: 1fr;
+            }
+            .screen {
+                padding: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<header class="tv-header">
+    <div class="logo">🌀 XOLƎRIƆ · SUPERNOVA</div>
+    <div class="header-buttons">
+        <button class="mode-btn active" id="listModeBtn">📚 RO‘YXAT</button>
+        <button class="mode-btn" id="autoModeBtn">🎬 AVTOMATIK</button>
+        <button class="fullscreen-btn" id="fullscreenBtn">🖥️ TO‘LIQ EKRAN</button>
+        <button class="fav-btn" id="showFavBtn">⭐ SEVIMLILAR</button>
+        <button class="sound-btn" id="soundToggleBtn">🌬️ TABIAT OVOZI: YOQIQ</button>
+        <button class="mode-btn" id="toggleVoiceBtn">🔊 OVOZNI O'CHIRISH</button>
+    </div>
+    <div class="word-of-day" id="wordOfDay">✨ KUN SO‘ZI: yuklanmoqda</div>
+</header>
+
+<div class="main-content">
+    <div id="listScreen" class="screen">
+        <div class="tabs-container" id="stepTabs"></div>
+        <div class="tabs-container" id="letterTabs"></div>
+        <div id="wordsGrid" class="words-grid"></div>
+    </div>
+
+    <div id="autoScreen" class="screen hidden">
+        <div class="auto-container">
+            <div class="word-card">
+                <div class="big-word" id="autoWord">-</div>
+                <div class="word-meta" id="autoMeta">-</div>
+            </div>
+            <div class="auto-controls">
+                <button class="ctrl-btn" id="prevBtn">◀ Oldingi</button>
+                <button class="ctrl-btn" id="playPauseBtn">⏸️ Pauza</button>
+                <button class="ctrl-btn" id="nextBtn">Keyingi ▶</button>
+                <button class="ctrl-btn" id="speakBtn">🔊 Takror</button>
+                <button class="ctrl-btn" id="favAutoBtn">⭐ Sevimli</button>
+            </div>
+            <div class="speed-selector" id="speedGroup">
+                <span style="color:var(--text-dim)">⏱️ Tezlik:</span>
+                <button data-speed="10" class="speed-option">10s</button>
+                <button data-speed="20" class="speed-option">20s</button>
+                <button data-speed="30" class="speed-option active">30s</button>
+                <button data-speed="45" class="speed-option">45s</button>
+            </div>
+            <div class="progress-text" id="autoProgress">📍 1 / 0</div>
+            <div class="progress-text" id="timerDisplay">⏲️ 30 soniya</div>
+        </div>
+    </div>
+</div>
+
+<div class="status-bar">
+    <div class="status-item"><span class="status-icon">🎙️</span> Ovoz: <span id="voiceStatus">✅ faol</span></div>
+    <div class="status-item"><span class="status-icon">⭐</span> Sevimlilar: <span id="favCount">0</span></div>
+    <div class="status-item"><span class="status-icon">🎵</span> Atmosfera: <span id="soundStatus">🌬️ shamol</span></div>
+    <div class="status-item" style="color:var(--accent)">🔽 Pult: ⬆️⬇️⬅️➡️ ENTER</div>
+</div>
+
+<script>
+    // --------------------------------------------------------------
+    // 1. GENERATE MASSIVE WORD DATABASE (100+ per letter)
+    // --------------------------------------------------------------
+    const LETTERS = ["A","B","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","X","Y","Z","O'","G'","Sh","Ch","Ng"];
+
+    function syllabify(word) {
+        // simple hyphenation for Uzbek-like syllables
+        return word.replace(/([^aeiouoʻg‘]+?[aeiouoʻg‘])/gi, '$1-').replace(/-$/, '');
+    }
+
+    function generateWordBank() {
+        const bank = {};
+        const rootMap = {
+            "A": ["olma","anor","ayiq","asos","axborot","avtomobil","adabiyot","akademiya","amaliyot","ariza","arvoh","asl","atrof","avlod","azob","ajdod","afsona","aql","a'zo","o'zbek","azamat","aralash","achchiq","afsun","angor","apelsin","arg'uvon","astar","avzoyi","aylana"],
+            "B": ["bola","bobo","baliq","bilim","bahor","bog'","bosh","burun","buxoro","bozor","bo'ron","burch","baxmal","baraka","bekor","bezak","baho","bog'bon","bemor","bo'g'in","bunyod","barqaror","bejirim","betakror","bamisoli","baland","baxshi","bazm"],
+            "D": ["dada","dala","davlat","daraxt","dunyo","dehqon","dori","davom","dastur","dil","do'st","duo","dargoh","daryo","davr","dahshat","dovul","doston","davolash","donishmand","dilkash","dilrabo","dabdaba","darg'azab","diydor","durdona","duet","dovrug'"],
+            "E": ["ega","elak","eshik","ertak","ekin","elat","etik","elon","egasi","eski","ertaga","ezgu","erkin","ehtiyoj","ekspert","elektr","energiya","ertakchi","ezilgan","elchixona","ezma","elita","erk","erur","e'tibor","e'lon","ezmalik"],
+            "F": ["fazo","fido","foiz","faol","ferma","faqir","fan","fonar","falsafa","foyda","fidokor","farzand","falokat","fakt","farq","futbol","fikr","foydali","farzandli","fotiha","firibgar","faylasuf","fojiya","fahm","farovon","fazilat","fashist"],
+            "G": ["gul","gavda","gilam","gado","guruh","gapi","guldon","gulxan","gulchi","garam","garmon","guvoh","guliston","gulparvar","gulxanchi","gilamdoz","gardish","go'zal","gulzor","g'ayrat","g'azal","g'uncha","g'arb","g'olib","g'ayra","g'azab","g'ijim"],
+            "H": ["havo","hayo","hidla","hasad","hurmat","hali","hozir","hunarmand","harakat","hayajon","hayot","hukumat","haqiqat","hurmatli","hunar","hujjat","haykal","haqiqiy","halol","havaskor","havotir","hazil","hukmron","hushyor","himmat","hazina"],
+            "I": ["ilon","ipak","irim","ikki","iliq","ishing","ishonch","ilova","ibora","ilm","ijod","ilmiy","ijobat","iqtisod","ixtiro","ichimlik","iymon","izoh","ixtiyor","iqtidor","ixtilol","izlamoq","ishq","idrok","iymonli","iqtibos"],
+            "J": ["juda","jo'ja","jazo","jiyda","jasur","jonim","javob","jo'nat","jahldor","joyla","jahon","juftlik","jahongir","joylashuv","jazava","javobgar","jasurlik","jinnilik","jamiyat","jinoyat","jilva","joziba","jismoniy","jombi","jurnal","jiddiy"],
+            "K": ["kabi","kuni","kecha","ko'rpa","kurak","kishi","kitob","karrak","komil","kiyim","kalom","kasbkor","kitobxon","komillik","kalamdon","kelajak","kalaka","kuzatish","kitobxona","kiyimkechak","ko'ngil","kuch","kamtar","kengash","kafolat","ko'zgu","kishmish"],
+            "L": ["lola","lagan","lug'at","laqab","loyqa","likash","limon","laziz","libos","lochin","laylak","lazzat","loyiha","limonzor","lolazor","liboslar","lazzatli","lato fat","laborator","layoqat","lirik","lutf","lazzatlanish","lo'ppi","loyiqlik","lavha","laganbardor"],
+            "M": ["momo","maqol","mano","meva","mana","mosh","maktab","manba","mohir","mijoz","masjid","maqom","mashina","misol","mohirlik","moddiy","muallim","masala","mashinasoz","mas'ul","muhabbat","mazmun","ma'rifat","mardon","marjon","majburiy","muhtoj"],
+            "N": ["nomi","niyat","nota","navo","nega","naqd","nafas","ne'mat","navbat","norin","nishon","nodon","nafaqa","nizom","namuna","natija","nihoyat","nohaq","nizomnoma","nodonlik","nodir","nozik","navqiron","nurli","nasihat","nufuz","nusxa"],
+            "O": ["ota","ona","oyoq","olov","oxir","og'iz","ovoz","olma","ochiq","oqil","odam","oqim","onasi","olimlar","ovoza","odamzod","osonlik","oqillik","onatili","ochiqlik","o'zbek","o'rik","o'tkir","o'ychan","o'xshatish","o'rgimchak","o'rdak"],
+            "P": ["paxta","piyoz","padar","pulli","pari","pok","peshin","pakka","pufak","pochta","palov","poliz","pullik","parda","pishiq","paxtakor","parhezkor","polizchi","pochtaxona","pardozchi","pahlavon","poyon","parishon","pand","parda","pishiqlik","poyabzal"],
+            "Q": ["qari","qulfi","qozi","qonli","qad","qumli","qamish","qatiq","quyon","qalam","qozon","qaror","qattiq","quyosh","qolip","qozoncha","quyoshli","qarorgoh","qalamkash","qoliplamoq","qadr","qarindosh","qo'ng'iroq","qush","qiyofa","qat'iy","qobiliyat"],
+            "R": ["rozi","rais","rosti","rang","rufti","rim","raqam","robot","rassom","rishta","rayhon","ruchka","rafiq","rivoj","risola","raqamli","rohatlan","rasmiy","rassomchi","risolachi","ravon","ramz","rohat","rangsiz","rahm","rahbar","ro'zg'or"],
+            "S": ["sahar","soya","suv","sir","sof","san","savat","sariq","sovuq","sanoq","soat","suli","suvor","salom","savoq","sarson","savatcha","sezgir","soatsoz","suvoriy","samimiy","sabr","savol","sabzavot","sarlavha","sarguzasht","sayohat"],
+            "T": ["tola","tuya","til","tog'","tan","toj","tovoq","tilla","tog'a","tulki","talim","tomir","tuzuk","tarif","tikin","turar","talimot","tuzuklik","tomirlar","tarifnoma","tinch","tavba","tayyor","tarix","tajriba","tabassum","tushuncha"],
+            "U": ["uka","uya","unli","uzra","uy","ul","ukam","uzun","umid","uzum","ushoq","urug'","uloq","ulan","uyat","uquv","uzumzor","urug'chi","ulanma","uloqchi","ustoz","uqubat","ulug'","umrbod","usul","umumiy","uzoq"],
+            "V": ["vafo","voya","vaqt","vak","vay","vah","vatan","varaq","vakil","vodiy","vazni","vali","vijdon","video","vilka","varrak","vodiyli","viloyat","videolar","vasiyat","vazifa","vujud","vahshiy","voqea","vad","vahima","vazmin"],
+            "X": ["xato","xola","xafa","xos","xil","xor","xatlar","xumi","xarit","xalqim","xona","xurmo","xarid","xabar","xirmon","xaridor","xurmozor","xalqaro","xonadon","xabardor","xotira","xayol","xayrixoh","xilma","xizmat","xush","xursand"],
+            "Y": ["yangi","yarim","yo'q","yod","yoz","yot","yurak","yilgi","yovuz","yoqut","yozuv","yuz","yulg'un","yo'nal","yukla","yaxshi","yaqin","yozuvchi","yuklamoq","yarimta","yulduz","yosh","yengil","yolg'on","yordam","yo'l","yaproq"],
+            "Z": ["zina","zaki","zo'r","zeb","zir","zuv","zarba","zirak","zafar","zarar","zamin","zamon","zog'or","zona","zuluk","zanjir","zamonlar","zulmkor","zamindor","zararli","zavq","zohir","ziyoda","zich","zahir","zargar","zaytun"],
+            "O'": ["o'zi","o'y","o'q","o't","o'n","o'ch","o'rik","o'rtoq","o'rdak","o'tish","o'yin","o'g'il","o'choq","o'rni","o'lim","o'zak","o'sim","o'rikzor","o'g'ilcha","o'zakli","o'zbekcha","o'ynoq","o'qituvchi","o'rgatish","o'zgarish","o'xshash","o'rtacha"],
+            "G'": ["g'or","g'am","g'oz","g'isht","g'il","g'ash","g'o'za","g'ilof","g'olib","g'oya","girom","g'azab","g'alla","g'oyib","g'urur","g'amxo'r","g'ildir","g'oyona","g'ozalik","g'allakor","g'ayrat","g'uncha","g'ubor","g'alaba","g'azal","g'ijim","g'irrom"],
+            "Sh": ["shu","shar","shoh","sher","shir","shan","shahar","shumi","shamo","shipa","shamol","shodlik","shodli","shirin","shukuh","sharaf","shuur","shukr","sharafli","shaharlar","shifokor","shifo","sho'x","shaxs","shayton","shahzoda","shoira"],
+            "Ch": ["cho'l","choy","chop","chaq","chek","chiz","chaqa","chuqur","chelak","chiroq","chayla","chopon","choynak","chuchva","chana","chaqir","cho'ntak","cho'loq","chaylachi","chuqurlik","chakkam","chaman","chambar","charkh","chidam","chinor","chirkin"],
+            "Ng": ["tong","song","bong","ming","teng","keng","tanga","mangu","yangi","tongi","mingi","dengiz","shang'i","singil","jangchi","bangi","chengal","bengal","tangalar","mangulik","tonggi","sengir","changal","qo'ng'iroq","yengil","tenglik","tengdosh"]
+        };
+
+        for (let letter of LETTERS) {
+            let roots = rootMap[letter] || ["xoler","xol","xolera","xolisona","xolbek","xolmat","xolmirza","xolnazar","xolqobil","xoltoji","xolali","xolachi","xolavoy","xolayor","xolbek","xolboy","xoldor","xoljigit","xolmir","xolqori","xolsult","xoltoji","xolxo'ja","xolxo'ra","xolyor","xolzoda","xolzokir"];
+            let words = [];
+            let suffixes = ["","chi","lik","dor","li","siz","kor","xona","goh","boz","lar","ning","da","ga","ni","dan","cha","ona","iy","viy","parvar","mand","kash","gir","don","zor","bon","gar","jon","shunos","navoz"];
+            for (let root of roots) {
+                words.push(root);
+                for (let sfx of suffixes.slice(0, 12)) {
+                    if (sfx) words.push(root + sfx);
+                }
+            }
+            let unique = [...new Map(words.map(w => [w, syllabify(w)])).values()];
+            while (unique.length < 140) unique.push(syllabify(unique[unique.length % roots.length] + "bon"));
+            const stepWords = { step1: [], step2: [], step3: [], step4: [], step5: [], step6: [] };
+            unique.sort((a,b) => a.replace(/-/g,'').length - b.replace(/-/g,'').length);
+            for (let w of unique) {
+                let len = w.replace(/-/g,'').length;
+                if (len <= 5) stepWords.step1.push(w);
+                else if (len <= 7) stepWords.step2.push(w);
+                else if (len <= 9) stepWords.step3.push(w);
+                else if (len <= 11) stepWords.step4.push(w);
+                else if (len <= 13) stepWords.step5.push(w);
+                else stepWords.step6.push(w);
+            }
+            for (let s=1; s<=6; s++) {
+                let arr = stepWords[`step${s}`];
+                if (arr.length < 6) {
+                    let fill = stepWords[`step${s-1>0?s-1:1}`];
+                    while(arr.length < 6 && fill.length) arr.push(fill[arr.length % fill.length]);
+                }
+            }
+            for (let s=1; s<=6; s++) {
+                let current = stepWords[`step${s}`];
+                while(current.length < 18) current.push(current[current.length % 12]);
+                stepWords[`step${s}`] = current.slice(0, 28);
+            }
+            bank[letter] = stepWords;
+        }
+        return bank;
+    }
+
+    const DB = generateWordBank();
+    let allWords = [];
+    for (let step = 1; step <= 6; step++) {
+        LETTERS.forEach(letter => {
+            (DB[letter][`step${step}`] || []).forEach(word => {
+                allWords.push({ word, letter, step, raw: word.replace(/-/g, '') });
+            });
+        });
+    }
+    const TOTAL_WORDS = allWords.length;
+
+    // Favorites
+    let favorites = new Set();
+    function loadFavs() {
+        try {
+            let f = localStorage.getItem("xoleric_favs");
+            if (f) favorites = new Set(JSON.parse(f));
+        } catch(e) {}
+        updateFavUI();
+    }
+    function saveFavs() {
+        localStorage.setItem("xoleric_favs", JSON.stringify([...favorites]));
+        updateFavUI();
+    }
+    function toggleFav(wordObj) {
+        if (favorites.has(wordObj.word)) favorites.delete(wordObj.word);
+        else favorites.add(wordObj.word);
+        saveFavs();
+        if (currentMode === "list") refreshListMode();
+        if (currentMode === "auto") updateAutoFavBtn();
+    }
+    function updateFavUI() {
+        document.getElementById("favCount").innerText = favorites.size;
+    }
+
+    // Speech
+    let speechEnabled = true;
+    function speakWord(text) {
+        if (!speechEnabled) return;
+        let clean = text.replace(/-/g, '');
+        let utterance = new SpeechSynthesisUtterance(clean);
+        utterance.lang = 'uz-UZ';
+        utterance.rate = 0.85;
+        window.speechSynthesis.cancel();
+        window.speechSynthesis.speak(utterance);
+    }
+
+    // Ambient sound (wind)
+    let audioCtx = null;
+    let soundActive = true;
+    let soundLoopId = null;
+    let noiseSource = null;
+    let oscSource = null;
+    let gainNode = null;
+    let filterNode = null;
+
+    function initAudio() {
+        if (audioCtx) return;
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        gainNode = audioCtx.createGain();
+        gainNode.gain.value = 0.15;
+        filterNode = audioCtx.createBiquadFilter();
+        filterNode.type = "lowpass";
+        filterNode.frequency.value = 700;
+        filterNode.Q.value = 1.2;
+        gainNode.connect(filterNode);
+        filterNode.connect(audioCtx.destination);
+    }
+
+    function startWind() {
+        if (!soundActive) return;
+        if (!audioCtx) initAudio();
+        if (noiseSource) stopWind();
+        const bufferSize = 2 * audioCtx.sampleRate;
+        const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) {
+            let noise = (Math.random() * 2 - 1) * 0.5;
+            let envelope = 0.5 + 0.3 * Math.sin(i * 0.0005);
+            data[i] = noise * envelope;
+        }
+        const noise = audioCtx.createBufferSource();
+        noise.buffer = buffer;
+        noise.loop = true;
+        const osc = audioCtx.createOscillator();
+        osc.type = "sine";
+        osc.frequency.value = 100;
+        const oscGain = audioCtx.createGain();
+        oscGain.gain.value = 0.05;
+        osc.connect(oscGain);
+        oscGain.connect(gainNode);
+        noise.connect(gainNode);
+        osc.start();
+        noise.start();
+        noiseSource = noise;
+        oscSource = osc;
+        function modulate() {
+            if (!filterNode || !soundActive) return;
+            filterNode.frequency.value = 550 + Math.sin(Date.now() * 0.002) * 200;
+            gainNode.gain.value = 0.15 + Math.sin(Date.now() * 0.0015) * 0.05;
+            soundLoopId = requestAnimationFrame(modulate);
+        }
+        modulate();
+    }
+
+    function stopWind() {
+        if (noiseSource) {
+            try { noiseSource.stop(); } catch(e) {}
+            noiseSource = null;
+        }
+        if (oscSource) {
+            try { oscSource.stop(); } catch(e) {}
+            oscSource = null;
+        }
+        if (soundLoopId) cancelAnimationFrame(soundLoopId);
+        soundLoopId = null;
+        if (gainNode) gainNode.gain.value = 0;
+    }
+
+    function toggleSound() {
+        soundActive = !soundActive;
+        const btn = document.getElementById("soundToggleBtn");
+        const statusSpan = document.getElementById("soundStatus");
+        if (soundActive) {
+            if (!audioCtx) initAudio();
+            startWind();
+            btn.innerHTML = "🌬️ TABIAT OVOZI: YOQIQ";
+            statusSpan.innerText = "🌬️ shamol";
+            if (audioCtx && audioCtx.state === "suspended") audioCtx.resume();
+        } else {
+            stopWind();
+            btn.innerHTML = "🔇 TABIAT OVOZI: O'CHIQ";
+            statusSpan.innerText = "🔇 o'chirilgan";
+        }
+    }
+
+    function resumeAudioOnGesture() {
+        if (audioCtx && audioCtx.state === "suspended") {
+            audioCtx.resume();
+            if (soundActive) startWind();
+        }
+    }
+    document.addEventListener("click", resumeAudioOnGesture);
+    document.addEventListener("keydown", resumeAudioOnGesture);
+
+    // UI State
+    let currentMode = "list";
+    let currentStep = 1;
+    let currentLetter = LETTERS[0];
+    let showOnlyFav = false;
+    let autoIndex = 0;
+    let autoPlaying = true;
+    let autoTimer = null;
+    let autoSpeed = 30;
+    let timerSec = 30;
+
+    // DOM elements
+    const listScreen = document.getElementById("listScreen");
+    const autoScreen = document.getElementById("autoScreen");
+    const listModeBtn = document.getElementById("listModeBtn");
+    const autoModeBtn = document.getElementById("autoModeBtn");
+    const showFavBtn = document.getElementById("showFavBtn");
+    const fullscreenBtn = document.getElementById("fullscreenBtn");
+    const toggleVoiceBtn = document.getElementById("toggleVoiceBtn");
+    const voiceStatusSpan = document.getElementById("voiceStatus");
+
+    function setMode(mode) {
+        currentMode = mode;
+        if (mode === "list") {
+            listScreen.classList.remove("hidden");
+            autoScreen.classList.add("hidden");
+            listModeBtn.classList.add("active");
+            autoModeBtn.classList.remove("active");
+            stopAutoTimer();
+            refreshListMode();
+        } else {
+            listScreen.classList.add("hidden");
+            autoScreen.classList.remove("hidden");
+            autoModeBtn.classList.add("active");
+            listModeBtn.classList.remove("active");
+            startAutoTimer();
+            updateAutoDisplay();
+        }
+    }
+
+    function refreshListMode() {
+        // Step tabs
+        const stepDiv = document.getElementById("stepTabs");
+        stepDiv.innerHTML = "";
+        for (let s=1; s<=6; s++) {
+            const btn = document.createElement("button");
+            btn.className = `step-tab ${currentStep === s ? 'active' : ''}`;
+            btn.innerText = `${s}-bosqich`;
+            btn.onclick = () => { currentStep = s; refreshListMode(); };
+            stepDiv.appendChild(btn);
+        }
+        // Letter tabs
+        const letterDiv = document.getElementById("letterTabs");
+        letterDiv.innerHTML = "";
+        LETTERS.forEach(letter => {
+            if ((DB[letter][`step${currentStep}`] || []).length === 0) return;
+            const btn = document.createElement("button");
+            btn.className = `letter-tab ${currentLetter === letter ? 'active' : ''}`;
+            btn.innerText = letter;
+            btn.onclick = () => { currentLetter = letter; refreshListMode(); };
+            letterDiv.appendChild(btn);
+        });
+        // Words grid
+        let words = DB[currentLetter][`step${currentStep}`] || [];
+        let wordObjs = words.map(w => ({ word: w, letter: currentLetter, step: currentStep, raw: w.replace(/-/g,'') }));
+        if (showOnlyFav) wordObjs = wordObjs.filter(w => favorites.has(w.word));
+        const grid = document.getElementById("wordsGrid");
+        grid.innerHTML = "";
+        for (let w of wordObjs) {
+            const tile = document.createElement("div");
+            tile.className = "word-tile";
+            tile.setAttribute("tabindex", "0");
+            const isStar = favorites.has(w.word);
+            tile.innerHTML = `<span class="word-text">${w.word}</span><button class="star-btn ${isStar ? '' : 'inactive'}">${isStar ? '★' : '☆'}</button>`;
+            const starBtn = tile.querySelector(".star-btn");
+            starBtn.onclick = (e) => { e.stopPropagation(); toggleFav(w); refreshListMode(); };
+            tile.onclick = (e) => { if (e.target !== starBtn) speakWord(w.word); };
+            grid.appendChild(tile);
+        }
+        if (wordObjs.length === 0) grid.innerHTML = "<div style='padding:40px; text-align:center; color:var(--text-dim)'>❗ Sevimli so‘zlar yo‘q</div>";
+    }
+
+    function updateAutoDisplay() {
+        const word = allWords[autoIndex];
+        document.getElementById("autoWord").innerText = word.word;
+        document.getElementById("autoMeta").innerHTML = `${word.step}-bosqich · ${word.letter} harfi`;
+        document.getElementById("autoProgress").innerHTML = `📍 ${autoIndex+1} / ${TOTAL_WORDS}`;
+        if (speechEnabled) speakWord(word.word);
+        updateAutoFavBtn();
+    }
+    function updateAutoFavBtn() {
+        const btn = document.getElementById("favAutoBtn");
+        const isFav = favorites.has(allWords[autoIndex].word);
+        btn.innerHTML = isFav ? "⭐ Sevimlidan olib tashlash" : "⭐ Sevimlilarga qo‘shish";
+    }
+    function nextAuto() {
+        autoIndex = (autoIndex + 1) % TOTAL_WORDS;
+        updateAutoDisplay();
+        resetTimer();
+    }
+    function prevAuto() {
+        autoIndex = (autoIndex - 1 + TOTAL_WORDS) % TOTAL_WORDS;
+        updateAutoDisplay();
+        resetTimer();
+    }
+    function resetTimer() {
+        if (autoPlaying) timerSec = autoSpeed;
+        document.getElementById("timerDisplay").innerHTML = `⏲️ ${timerSec} soniya`;
+    }
+    function startAutoTimer() {
+        if (autoTimer) clearInterval(autoTimer);
+        timerSec = autoSpeed;
+        document.getElementById("timerDisplay").innerHTML = `⏲️ ${timerSec} soniya`;
+        autoTimer = setInterval(() => {
+            if (autoPlaying) {
+                timerSec--;
+                document.getElementById("timerDisplay").innerHTML = `⏲️ ${timerSec} soniya`;
+                if (timerSec <= 0) {
+                    nextAuto();
+                    timerSec = autoSpeed;
+                }
+            }
+        }, 1000);
+    }
+    function stopAutoTimer() {
+        if (autoTimer) clearInterval(autoTimer);
+        autoTimer = null;
+    }
+
+    // Event handlers for auto mode
+    document.getElementById("prevBtn").onclick = prevAuto;
+    document.getElementById("nextBtn").onclick = nextAuto;
+    document.getElementById("playPauseBtn").onclick = () => {
+        autoPlaying = !autoPlaying;
+        document.getElementById("playPauseBtn").innerHTML = autoPlaying ? "⏸️ Pauza" : "▶️ Boshlash";
+        resetTimer();
+    };
+    document.getElementById("speakBtn").onclick = () => speakWord(allWords[autoIndex].word);
+    document.getElementById("favAutoBtn").onclick = () => {
+        toggleFav(allWords[autoIndex]);
+        updateAutoFavBtn();
+        if (currentMode === "list") refreshListMode();
+    };
+    document.querySelectorAll(".speed-option").forEach(btn => {
+        btn.onclick = () => {
+            document.querySelectorAll(".speed-option").forEach(b => b.classList.remove("active"));
+            btn.classList.add("active");
+            autoSpeed = parseInt(btn.dataset.speed);
+            if (autoPlaying) timerSec = autoSpeed;
+            document.getElementById("timerDisplay").innerHTML = `⏲️ ${timerSec} soniya`;
+        };
+    });
+
+    listModeBtn.onclick = () => setMode("list");
+    autoModeBtn.onclick = () => { setMode("auto"); if (!autoTimer) startAutoTimer(); };
+    showFavBtn.onclick = () => { showOnlyFav = !showOnlyFav; showFavBtn.style.background = showOnlyFav ? "#fbbf24" : ""; showFavBtn.style.color = showOnlyFav ? "#050510" : ""; refreshListMode(); };
+    fullscreenBtn.onclick = () => { if (!document.fullscreenElement) document.documentElement.requestFullscreen(); else document.exitFullscreen(); };
+    toggleVoiceBtn.onclick = () => { speechEnabled = !speechEnabled; voiceStatusSpan.innerText = speechEnabled ? "✅ faol" : "🔇 o‘chirilgan"; toggleVoiceBtn.innerHTML = speechEnabled ? "🔇 OVOZNI O'CHIRISH" : "🔊 OVOZNI YOQISH"; };
+    document.getElementById("soundToggleBtn").onclick = toggleSound;
+
+    // Remote control focus management
+    function getFocusableElements() {
+        if (currentMode === "list") {
+            const tiles = Array.from(document.querySelectorAll("#wordsGrid .word-tile"));
+            const tabs = Array.from(document.querySelectorAll("#stepTabs button, #letterTabs button"));
+            return [...tabs, ...tiles];
+        } else {
+            return Array.from(document.querySelectorAll("#autoScreen button, .speed-option"));
+        }
+    }
+    let focusIdx = 0;
+    function moveFocus(delta) {
+        const items = getFocusableElements();
+        if (items.length === 0) return;
+        focusIdx = (focusIdx + delta + items.length) % items.length;
+        const target = items[focusIdx];
+        if (target) {
+            target.focus();
+            target.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+    }
+    window.addEventListener("keydown", (e) => {
+        const key = e.key;
+        if (key === "ArrowDown") { e.preventDefault(); moveFocus(1); }
+        else if (key === "ArrowUp") { e.preventDefault(); moveFocus(-1); }
+        else if (key === "ArrowLeft" && currentMode === "auto") { e.preventDefault(); prevAuto(); }
+        else if (key === "ArrowRight" && currentMode === "auto") { e.preventDefault(); nextAuto(); }
+        else if (key === "Enter" || key === " ") { e.preventDefault(); if (document.activeElement && document.activeElement.click) document.activeElement.click(); }
+    });
+
+    // Word of the day
+    function setWordOfDay() {
+        const random = allWords[Math.floor(Math.random() * TOTAL_WORDS)];
+        document.getElementById("wordOfDay").innerHTML = `✨ KUN SO‘ZI: ${random.word}`;
+    }
+    setWordOfDay();
+
+    // Initialize
+    loadFavs();
+    refreshListMode();
+    updateAutoDisplay();
+    setMode("list");
+    // start ambient sound after a short delay
+    setTimeout(() => { if (soundActive) startWind(); }, 500);
+</script>
+</body>
+</html>
